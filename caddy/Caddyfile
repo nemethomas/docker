@@ -1,0 +1,6 @@
+photos.ponihof.v6.rocks {
+    reverse_proxy immich_server:2283
+}
+dms.ponihof.v6.rocks {
+    reverse_proxy host.docker.internal:8010
+}

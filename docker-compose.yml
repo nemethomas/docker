@@ -1,0 +1,191 @@
+services:
+  minecraft:
+    image: itzg/minecraft-bedrock-server
+    ports:
+      - "19132:19132/udp"
+      - "19133:19133/udp"
+    environment:
+      EULA: "TRUE"
+      VERSION: "LATEST"
+    volumes:
+      - ./minecraft/data:/data
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    user: root
+    volumes:
+      - ./minecraft/data/logs:/var/log/minecraft:ro
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.16.1
+    user: root
+    hostname: metricbeat
+    volumes:
+      - ./metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    command: metricbeat -e -strict.perms=false
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    ports:
+      - "9443:9443"
+      - "8000:8000"
+
+  # ─────────────────────────────────────────────
+  # Paperless-ngx (Postgres + Redis + Webserver)
+  # Consume-Ordner: ./paperless/consume  (=> /home/tom/docker/paperless/consume)
+  # UI: http://<server-ip>:8010
+  # ─────────────────────────────────────────────
+
+  paperless-broker:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - ./paperless/redisdata:/data
+
+  paperless-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: paperless
+    volumes:
+      - ./paperless/pgdata:/var/lib/postgresql/data
+
+  paperless-webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - paperless-db
+      - paperless-broker
+    ports:
+      - "8010:8000"
+    environment:
+      PAPERLESS_REDIS: redis://paperless-broker:6379
+      PAPERLESS_DBHOST: paperless-db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: paperless
+
+      PAPERLESS_TIME_ZONE: Europe/Zurich
+      PAPERLESS_OCR_LANGUAGE: deu+eng
+
+      # Optional, aber praktisch:
+      PAPERLESS_CONSUMER_POLLING: 5
+      # PAPERLESS_SECRET_KEY: "SETZE_HIER_EINEN_LANGEN_RANDOM_STRING"
+    volumes:
+      - ./paperless/data:/usr/src/paperless/data
+      - ./paperless/media:/usr/src/paperless/media
+      - ./paperless/export:/usr/src/paperless/export
+      - ./paperless/consume:/usr/src/paperless/consume
+
+# ─────────────────────────────────────────────
+  # Immich (Postgres + Redis + Machine Learning)
+  # UI: http://<server-ip>:2283
+  # ─────────────────────────────────────────────
+
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich_server
+    restart: unless-stopped
+    depends_on:
+      - immich-redis
+      - immich-db
+    ports:
+      - "2283:2283"
+    environment:
+      DB_HOSTNAME: immich-db
+      DB_USERNAME: immich
+      DB_PASSWORD: immich_sicheres_passwort
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+    volumes:
+      - ./immich/upload:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich_machine_learning
+    restart: unless-stopped
+    volumes:
+      - ./immich/model-cache:/cache
+
+  immich-redis:
+    image: redis:7
+    container_name: immich_redis
+    restart: unless-stopped
+
+  immich-db:
+    image: tensorchord/pgvecto-rs:pg14-v0.2.0
+    container_name: immich_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: immich
+      POSTGRES_USER: immich
+      POSTGRES_PASSWORD: immich_sicheres_passwort
+    volumes:
+      - ./immich/pgdata:/var/lib/postgresql/data
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - immich-server
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+volumes:
+  portainer_data:
+  caddy_data:
+  caddy_config:

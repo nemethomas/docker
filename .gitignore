@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────
+# Minecraft Daten
+# ─────────────────────────────────────────────
+minecraft/data/*
+minecraft/data/*.db
+minecraft/data/*.db-shm
+minecraft/data/*.db-wal
+minecraft/data/Dedicated_Server.txt
+minecraft/data/packet-statistics.txt
+minecraft/data/premium_cache/
+minecraft/data/treatments/
+minecraft/data/minecraftpe/
+minecraft/data/development_*/
+minecraft/data/logs/
+minecraft/data/bedrock_server*
+minecraft/data/*.so
+minecraft/data/*.debug
+
+# ─────────────────────────────────────────────
+# Elasticsearch Daten
+# ─────────────────────────────────────────────
+elasticsearch/data/
+
+# ─────────────────────────────────────────────
+# Metricbeat / Filebeat
+# ─────────────────────────────────────────────
+filebeat/data/
+metricbeat/data/
+
+# ─────────────────────────────────────────────
+# Paperless-ngx
+# ─────────────────────────────────────────────
+paperless/data/
+paperless/media/
+paperless/export/
+paperless/consume/
+paperless/pgdata/
+paperless/redisdata/
+
+# Optional (falls später verwendet)
+paperless/log/
+paperless/.env
+
+# ─────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────
+*.log
+
+# ─────────────────────────────────────────────
+# Temporäre Dateien
+# ─────────────────────────────────────────────
+*.tmp
+*.bak
+*~
+.DS_Store
+
+# ─────────────────────────────────────────────
+# Secrets
+# ─────────────────────────────────────────────
+*.key
+*.pem
+*.env
+secrets/
+
+# ─────────────────────────────────────────────
+# Immich
+# ─────────────────────────────────────────────
+immich/pgdata/
+immich/upload/
+immich/thumbs/
+immich/profile/
+immich/encoded-video/
+immich/backups/
+
+# ─────────────────────────────────────────────
+# Kibana
+# ─────────────────────────────────────────────
+kibana/data/
+kibana/logs/
+immich/model-cache/
+immich/db_backup.sql
