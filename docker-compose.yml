@@ -185,7 +185,25 @@ services:
       - immich-server
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=n8n.ponihof.v6.rocks
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.ponihof.v6.rocks/
+      - GENERIC_TIMEZONE=Europe/Zurich
+      - N8N_SECURE_COOKIE=false
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
 volumes:
   portainer_data:
   caddy_data:
   caddy_config:
+  n8n_data:

@@ -4,3 +4,7 @@ photos.ponihof.v6.rocks {
 dms.ponihof.v6.rocks {
     reverse_proxy host.docker.internal:8010
 }
+
+n8n.ponihof.v6.rocks {
+    reverse_proxy n8n:5678
+}
