@@ -5,11 +5,12 @@ TMP_DUMP=~/docker/paperless/db_dump_tmp.sql
 
 RCLONE_OPTS="
   --dropbox-batch-mode async \
-  --dropbox-batch-size 100 \
+  --dropbox-batch-size 50 \
   --transfers 2 \
   --tpslimit 8 \
   --retries 10 \
-  --retries-sleep 30s"
+  --retries-sleep 30s
+  --no-update-modtime"
 
 # 1. DB Dump
 docker exec docker-paperless-db-1 pg_dump -U paperless paperless > $TMP_DUMP
